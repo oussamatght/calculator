@@ -4,53 +4,87 @@ const history = document.getElementById("history") as HTMLElement;
 let currentInput: string = "";
 let lastResult: string = "";
 
-const buttons = document.querySelectorAll<HTMLButtonElement>(".btn");
-buttons.forEach((btn) => {
-  btn.addEventListener("click", () => handleButton(btn));
+const buttons: NodeListOf<HTMLButtonElement> = document.querySelectorAll(".btn");
+buttons.forEach((btn: HTMLButtonElement) => {
+    btn.addEventListener("click", () => handleButtonClick(btn));
 });
 
-document.addEventListener("keydown", (e: KeyboardEvent) => handleKeyboard(e));
+document.addEventListener("keydown", (event: KeyboardEvent) => handleKeyboardInput(event));
 
-function handleButton(btn: HTMLButtonElement): void {
-  const value = btn.dataset.value;
-  const action = btn.dataset.action;
 
-  if (action === "clear") clearInput();
-  else if (action === "backspace") backspace();
-  else if (action === "calculate") calculate();
-  else if (value) appendValue(value);
+function handleButtonClick(btn: HTMLButtonElement): void {
+    const value: string | undefined = btn.dataset.value;
+    const action: string | undefined = btn.dataset.action;
+
+    if (action === "clear") {
+        clearInput();
+    } else if (action === "backspace") {
+        removeLastCharacter();
+    } else if (action === "calculate") {
+        calculateResult();
+    } else if (value) {
+        appendToInput(value);
+    }
 }
 
-function handleKeyboard(e: KeyboardEvent): void {
-  if (/[\d+\-*/.%]/.test(e.key)) appendValue(e.key);
-  if (e.key === "Enter") calculate();
-  if (e.key === "Backspace") backspace();
-  if (e.key.toLowerCase() === "c") clearInput();
+
+function handleKeyboardInput(event: KeyboardEvent): void {
+    const key: string = event.key;
+
+    if (/[0-9+\-*/.%]/.test(key)) {
+        appendToInput(key);
+    } else if (key === "Enter") {
+        calculateResult();
+    } else if (key === "Backspace") {
+        removeLastCharacter();
+    } else if (key.toLowerCase() === "c") {
+        clearInput();
+    }
 }
 
-function appendValue(value: string): void {
-  currentInput += value;
-  input.value = currentInput;
+
+function appendToInput(value: string): void {
+    currentInput += value;
+    updateInputField();
 }
+
 
 function clearInput(): void {
-  currentInput = "";
-  input.value = "";
+    currentInput = "";
+    updateInputField();
 }
 
-function backspace(): void {
-  currentInput = currentInput.slice(0, -1);
-  input.value = currentInput;
+
+function removeLastCharacter(): void {
+    currentInput = currentInput.slice(0, -1);
+    updateInputField();
 }
 
-function calculate(): void {
-  try {
-    const result = Function(`"use strict"; return (${currentInput})`)();
-    history.textContent = currentInput + " =";
-    currentInput = String(result);
+
+function updateInputField(): void {
     input.value = currentInput;
-  } catch {
+}
+
+
+function calculateResult(): void {
+    try {
+        const result: number = Function(`"use strict"; return (${currentInput})`)();
+        updateHistory(currentInput);
+        currentInput = String(result);
+        updateInputField();
+        lastResult = String(result);
+    } catch (error) {
+        handleCalculationError(error);
+    }
+}
+
+function updateHistory(expression: string): void {
+    history.textContent = expression + " =";
+}
+
+
+function handleCalculationError(error: any): void {
     input.value = "Error";
     currentInput = "";
-  }
+    console.error("Calculation error:", error);
 }
